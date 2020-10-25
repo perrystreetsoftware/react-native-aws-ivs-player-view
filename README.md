@@ -37,6 +37,25 @@ import PlayerView from "react-native-aws-ivs-player-view";
 
 ```
 
+## Development
+
+If you are interested in extending or enhacning this project, first clone it, then:
+
+Run
+
+```
+yarn bootstrap
+```
+
+When the bootstrap is done, you will be able to start the example app by executing one of the following commands:
+
+```
+# Android app
+yarn example android
+# iOS app
+yarn example ios
+```
+
 ## Contributing
 
 Please open PRs or issues and we will merge accordingly.
