@@ -6,17 +6,22 @@
 //
 
 import React, { Component } from 'react';
-import { PropTypes } from 'prop-types';
 import {
   requireNativeComponent,
-  View,
   UIManager,
   findNodeHandle,
+  ViewStyle,
+  HostComponent,
 } from 'react-native';
 
 var RCT_IVS_VIDEO_REF = 'AwsIvsPlayerView';
 
-class PlayerView extends Component {
+interface IAwsIvsPlayerView {
+  onDidChangeState?(any): any,
+  style?: ViewStyle
+}
+
+class PlayerView extends Component<IAwsIvsPlayerView> {
   constructor(props) {
     super(props);
   }
@@ -44,7 +49,7 @@ class PlayerView extends Component {
     );
   }
 
-  load(urlString) {
+  load(urlString: String) {
     UIManager.dispatchViewManagerCommand(
       findNodeHandle(this),
       UIManager.getViewManagerConfig('AwsIvsPlayerView').Commands.load,
@@ -63,16 +68,16 @@ class PlayerView extends Component {
   }
 }
 
-PlayerView.name = RCT_IVS_VIDEO_REF;
-PlayerView.propTypes = {
-  url: PropTypes.string,
-  ...View.propTypes,
-};
+// PlayerView.name = RCT_IVS_VIDEO_REF;
+// PlayerView.propTypes = {
+//   url: PropTypes.string,
+//   ...View.propTypes,
+// };
 
-const NativeIvsPlayerView = requireNativeComponent(
-  'AwsIvsPlayerView',
-  PlayerView,
-  {}
-);
+interface INativeIvsPlayer {
+  onLoadState?(any): any
+}
+
+const NativeIvsPlayerView: HostComponent<INativeIvsPlayer> = requireNativeComponent('AwsIvsPlayerView');
 
 export default PlayerView;
