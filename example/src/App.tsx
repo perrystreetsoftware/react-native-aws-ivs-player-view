@@ -36,17 +36,17 @@ export default function App() {
       />
       <Button
         onPress={() => {
-          this.player.pause();
-        }}
-        title="Pause"
-      />
-      <Button
-        onPress={() => {
           this.player.load(
             'https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8'
           );
         }}
-        title="Play Me"
+        title="Play"
+      />
+      <Button
+        onPress={() => {
+          this.player.pause();
+        }}
+        title="Pause"
       />
       <Button
         onPress={() => {
@@ -59,12 +59,6 @@ export default function App() {
           this.player.unmute();
         }}
         title="Unmute"
-      />
-      <Button
-        onPress={() => {
-          this.player.stop();
-        }}
-        title="Stop"
       />
     </View>
   );

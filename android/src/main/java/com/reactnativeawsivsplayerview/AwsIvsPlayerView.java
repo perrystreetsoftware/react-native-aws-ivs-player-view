@@ -24,7 +24,9 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
 
     public enum Commands {
         COMMAND_LOAD("load"),
-        COMMAND_PAUSE("pause");
+        COMMAND_PAUSE("pause"),
+        COMMAND_MUTE("mute"),
+        COMMAND_UNMUTE("unmute");
 
         private final String mName;
 
@@ -144,6 +146,18 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
         if (this.mPlayer != null) {
             mPlayer.pause();
         }
+    }
+
+    public void mute() {
+      if (this.mPlayer != null) {
+        mPlayer.setMuted(true);
+      }
+    }
+
+    public void unMute() {
+      if (this.mPlayer != null) {
+        mPlayer.setMuted(false);
+      }
     }
 
     @Override

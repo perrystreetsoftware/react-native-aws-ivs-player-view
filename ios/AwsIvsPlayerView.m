@@ -58,6 +58,39 @@ RCT_EXPORT_METHOD(pause:(NSNumber * __nonnull)reactTag) {
     }];
 }
 
+RCT_EXPORT_METHOD(mute:(NSNumber * __nonnull)reactTag) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IVSPlayerView *> *viewRegistry) {
+        IVSPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[IVSPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting IVSPlayerView, got: %@", view);
+        }
+        // Call your native component's method here
+        [view.player setMuted:YES];
+    }];
+}
+
+RCT_EXPORT_METHOD(unmute:(NSNumber * __nonnull)reactTag) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IVSPlayerView *> *viewRegistry) {
+        IVSPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[IVSPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting IVSPlayerView, got: %@", view);
+        }
+        // Call your native component's method here
+        [view.player setMuted:NO];
+    }];
+}
+
+RCT_EXPORT_METHOD(volume:(NSNumber * __nonnull)reactTag level:(NSNumber *)level) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IVSPlayerView *> *viewRegistry) {
+        IVSPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[IVSPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting IVSPlayerView, got: %@", view);
+        }
+
+        [view.player setVolume:level.floatValue];
+    }];
+}
+
 + (BOOL)requiresMainQueueSetup {
     return YES;
 }
