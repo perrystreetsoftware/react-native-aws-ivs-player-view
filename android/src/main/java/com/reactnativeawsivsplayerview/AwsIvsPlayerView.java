@@ -13,8 +13,14 @@ import com.amazonaws.ivs.player.Player;
 import com.amazonaws.ivs.player.PlayerException;
 import com.amazonaws.ivs.player.PlayerView;
 import com.amazonaws.ivs.player.Quality;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
+
+import java.util.Locale;
 
 public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListener {
     private static final String TAG = "RN_AwsIvsPlayerView";
@@ -38,6 +44,21 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
         public String toString() {
             return mName;
         }
+    }
+
+    public enum Events {
+      EVENT_CHANGE_STATE("onDidChangeState");
+
+      private final String mName;
+
+      Events(final String name) {
+        mName = name;
+      }
+
+      @Override
+      public String toString() {
+        return mName;
+      }
     }
 
     public AwsIvsPlayerView(Context context) {
@@ -92,6 +113,8 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
                         // playback started
                         break;
                 }
+
+                AwsIvsPlayerView.this.onDidChangeState(state);
             }
 
             @Override
@@ -193,5 +216,18 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
             mPlayer.release();
             mPlayer = null;
         }
+    }
+
+    public void onDidChangeState(@NonNull Player.State state) {
+        Log.i(TAG, String.format("onDidChangeState: %s", state.toString()));
+
+        WritableMap event = Arguments.createMap();
+        event.putString("state", String.format(Locale.US, "%d", state.ordinal()));
+
+        ReactContext reactContext = (ReactContext)getContext();
+        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+            getId(),
+            Events.EVENT_CHANGE_STATE.toString(),
+            event);
     }
 }

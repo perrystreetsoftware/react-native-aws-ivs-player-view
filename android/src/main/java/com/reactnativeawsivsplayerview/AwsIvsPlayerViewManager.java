@@ -31,17 +31,17 @@ public class AwsIvsPlayerViewManager extends SimpleViewManager<AwsIvsPlayerView>
         super.onDropViewInstance(view);
         view.cleanupMediaPlayerResources();
         view.release();
-    }
+    } 
 
-//    @Override
-//    @Nullable
-//    public Map getExportedCustomDirectEventTypeConstants() {
-//        MapBuilder.Builder builder = MapBuilder.builder();
-//        for (RNRtmpView.Events event : RNRtmpView.Events.values()) {
-//            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
-//        }
-//        return builder.build();
-//    }
+    @Override
+    @Nullable
+    public Map getExportedCustomDirectEventTypeConstants() {
+        MapBuilder.Builder builder = MapBuilder.builder();
+        for (AwsIvsPlayerView.Events event : AwsIvsPlayerView.Events.values()) {
+            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
+        }
+        return builder.build();
+    }
 
     @Override
     public Map<String,Integer> getCommandsMap() {
