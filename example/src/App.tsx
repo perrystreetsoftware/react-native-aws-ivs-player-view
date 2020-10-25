@@ -33,6 +33,9 @@ export default function App() {
         ref={(e: any) => {
           this.player = e;
         }}
+        onDidChangeState={(data) => {
+          console.log("Did change state: " + JSON.stringify(data));
+        }}
       />
       <Button
         onPress={() => {

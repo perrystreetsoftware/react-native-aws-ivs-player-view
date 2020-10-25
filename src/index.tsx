@@ -76,22 +76,16 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
   render() {
     return (
       <NativeIvsPlayerView
-        ref={RCT_IVS_VIDEO_REF}
-        onLoadState={this._onDidChangeState.bind(this)}
         {...this.props}
+        ref={RCT_IVS_VIDEO_REF}
+        onDidChangeState={this._onDidChangeState.bind(this)}
       />
     );
   }
 }
 
-// PlayerView.name = RCT_IVS_VIDEO_REF;
-// PlayerView.propTypes = {
-//   url: PropTypes.string,
-//   ...View.propTypes,
-// };
-
 interface INativeIvsPlayer {
-  onLoadState?(any): any
+  onDidChangeState?(any): any
 }
 
 const NativeIvsPlayerView: HostComponent<INativeIvsPlayer> = requireNativeComponent('AwsIvsPlayerView');
