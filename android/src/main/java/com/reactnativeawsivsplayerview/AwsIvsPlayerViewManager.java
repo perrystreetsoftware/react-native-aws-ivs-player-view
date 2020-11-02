@@ -6,6 +6,7 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.annotations.ReactProp;
 
 import java.util.Map;
 
@@ -13,6 +14,8 @@ import javax.annotation.Nonnull;
 
 public class AwsIvsPlayerViewManager extends SimpleViewManager<AwsIvsPlayerView> {
     public static final String REACT_CLASS = "AwsIvsPlayerView";
+
+    public static final String PROP_MAX_BUFFER_TIME_SECONDS = "maxBufferTimeSeconds";
 
     @Nonnull
     @Override
@@ -72,5 +75,10 @@ public class AwsIvsPlayerViewManager extends SimpleViewManager<AwsIvsPlayerView>
             default:
                 break;
         }
+    }
+
+    @ReactProp(name = PROP_MAX_BUFFER_TIME_SECONDS)
+    public void setMaxBufferTimeSeconds(AwsIvsPlayerView videoView, final float bufferTimeInSeconds) {
+        videoView.setMaxBufferTimeInSeconds((long)bufferTimeInSeconds);
     }
 }

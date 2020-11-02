@@ -30,11 +30,12 @@ export default function App() {
     <View style={styles.container}>
       <PlayerView
         style={styles.player}
+        maxBufferTimeSeconds={15}
         ref={(e: any) => {
           this.player = e;
         }}
         onDidChangeState={(data) => {
-          console.log("Did change state: " + JSON.stringify(data));
+          console.log('Did change state: ' + JSON.stringify(data));
         }}
       />
       <Button

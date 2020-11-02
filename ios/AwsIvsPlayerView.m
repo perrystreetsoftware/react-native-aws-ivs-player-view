@@ -13,9 +13,43 @@ RCT_ENUM_CONVERTER(IVSPlayerState, (@{
                                     }), IVSPlayerStateIdle, integerValue);
 @end
 
+static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
+
+@interface IVSCue (AwsIvsPlayerView)
+
+@end
+
+@implementation IVSCue (AwsIvsPlayerView)
+
+- (NSDictionary *)toDictionary {
+    if ([self isKindOfClass:[IVSTextMetadataCue class]]) {
+        IVSTextMetadataCue *textMetadataCue = (IVSTextMetadataCue *)self;
+
+        return @{@"text": textMetadataCue.text,
+                 @"description": textMetadataCue.textDescription};
+    } else if ([self isKindOfClass:[IVSTextCue class]]) {
+        IVSTextCue *textCue = (IVSTextCue *)self;
+
+        return @{@"text": textCue.text};
+    } else {
+        return @{@"type": self.type,
+                 @"start_time": @(CMTimeGetSeconds(self.startTime)),
+                 @"end_time": @(CMTimeGetSeconds(self.endTime))};
+    }
+}
+
+@end
+
 @interface IvsAdapterPlayerView : UIView <IVSPlayerDelegate>
 @property (nonatomic, strong) IVSPlayerView *playerView;
+@property (nonatomic, copy) RCTBubblingEventBlock onPlayerWillRebuffer;
 @property (nonatomic, copy) RCTBubblingEventBlock onDidChangeState;
+@property (nonatomic, copy) RCTBubblingEventBlock onDidChangeDuration;
+@property (nonatomic, copy) RCTBubblingEventBlock onDidOutputCue;
+@property (nonatomic, copy) RCTBubblingEventBlock onDidSeekToTime;
+@property (nonatomic, strong) NSURL *url;
+@property (nonatomic) NSInteger maxBufferTimeSeconds;
+@property (nonatomic) BOOL isPaused;
 
 @end
 
@@ -30,6 +64,8 @@ RCT_ENUM_CONVERTER(IVSPlayerState, (@{
         self.playerView = [[IVSPlayerView alloc] init];
         [self addSubview:self.playerView];
         self.playerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
+        self.maxBufferTimeSeconds = kDefaultMaxBufferTimeInSeconds;
     }
 
     return self;
@@ -37,15 +73,73 @@ RCT_ENUM_CONVERTER(IVSPlayerState, (@{
 
 // MARK: - IVSPlayerDelegate
 
+- (void)player:(IVSPlayer *)player didSeekToTime:(CMTime)time {
+    NSLog(@"Seeked to time %@", @(CMTimeGetSeconds(time)));
+    self.onDidSeekToTime(@{@"time": @(CMTimeGetSeconds(time))});
+}
+
+- (void)playerWillRebuffer:(IVSPlayer *)player {
+    self.onPlayerWillRebuffer(@{});
+}
+
+- (void)player:(IVSPlayer *)player didChangeDuration:(CMTime)duration {
+    NSLog(@"Changed duration to %@", @(CMTimeGetSeconds(duration)));
+    self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
+}
+
+- (void)player:(IVSPlayer *)player didOutputCue:(__kindof IVSCue *)cue {
+    NSLog(@"Did output Cue to %@", cue.type);
+    self.onDidOutputCue([cue toDictionary]);
+}
+
 - (void)player:(IVSPlayer *)player didChangeState:(IVSPlayerState)state {
-    if (state == IVSPlayerStateReady) {
-        [player play];
-    }
+    NSLog(@"Notify is %@", @(state));
+    NSLog(@"Buffered is %@", @(CMTimeGetSeconds(player.buffered)));
+    NSLog(@"LiveLowLatency is %@", @(player.liveLowLatency));
+    NSLog(@"Position is %@", @(CMTimeGetSeconds(player.liveLatency)));
 
     if (self.onDidChangeState) {
-        NSLog(@"Notify is %@", @(state));
+        self.onDidChangeState(@{@"state": @(state)});
+    }
 
-            self.onDidChangeState(@{@"state": @(state)});
+    switch(state) {
+        case IVSPlayerStateIdle:
+            NSLog(@"State: Idle");
+
+            if (!self.isPaused) {
+                NSLog(@"State: not paused -- reloading");
+
+                [self reload];
+            } else {
+                NSLog(@"State: we are paused -- not reloading %@", @(self.isPaused));
+            }
+            break;
+        case IVSPlayerStateBuffering:
+            NSLog(@"State: Buffering");
+            break;
+        case IVSPlayerStateEnded:
+            NSLog(@"State: Ended");
+            break;
+        case IVSPlayerStateReady:
+            NSLog(@"State: Ready");
+            [player play];
+            break;
+        case IVSPlayerStatePlaying:
+            NSLog(@"State: Playing");
+            // If we have accumulated too much of a buffer,
+            // then we need to move ourselves back into the
+            // IVSPlayerStateIdle state, which will then trigger
+            // a reload
+            if (@(CMTimeGetSeconds(player.buffered)).integerValue >= self.maxBufferTimeSeconds) {
+                [player pause];
+            }
+            break;
+    }
+}
+
+- (void)reload {
+    if (self.url) {
+        [[self player] load:self.url];
     }
 }
 
@@ -68,6 +162,10 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_VIEW_PROPERTY(onDidChangeState, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onDidChangeDuration, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onDidOutputCue, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onDidSeekToTime, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(maxBufferTimeSeconds, NSInteger)
 
 RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString) {
     [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
@@ -81,6 +179,7 @@ RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString)
         view.playerView.player = player;
 
         NSURL *videoUrl = [NSURL URLWithString:urlString];
+        view.url = videoUrl;
 
         [view.player load:videoUrl];
     }];
@@ -93,6 +192,7 @@ RCT_EXPORT_METHOD(pause:(NSNumber * __nonnull)reactTag) {
             RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
         }
 
+        view.isPaused = YES;
         [view.player pause];
     }];
 }

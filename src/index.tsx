@@ -17,8 +17,13 @@ import {
 var RCT_IVS_VIDEO_REF = 'AwsIvsPlayerView';
 
 interface IAwsIvsPlayerView {
-  onDidChangeState?(any): any,
-  style?: ViewStyle
+  onPlayerWillRebuffer?(any): any;
+  onDidChangeState?(any): any;
+  onDidChangeDuration?(any): any;
+  onDidOutputCue?(any): any;
+  onDidSeekToTime?(any): any;
+  maxBufferTimeSeconds: number;
+  style?: ViewStyle;
 }
 
 class PlayerView extends Component<IAwsIvsPlayerView> {
@@ -26,11 +31,39 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
     super(props);
   }
 
+  _onPlayerWillRebuffer = (event) => {
+    if (!this.props.onPlayerWillRebuffer) {
+      return;
+    }
+    this.props.onPlayerWillRebuffer(event.nativeEvent);
+  };
+
   _onDidChangeState = (event) => {
     if (!this.props.onDidChangeState) {
       return;
     }
     this.props.onDidChangeState(event.nativeEvent);
+  };
+
+  _onDidChangeDuration = (event) => {
+    if (!this.props.onDidChangeDuration) {
+      return;
+    }
+    this.props.onDidChangeDuration(event.nativeEvent);
+  };
+
+  _onDidOutputCue = (event) => {
+    if (!this.props.onDidOutputCue) {
+      return;
+    }
+    this.props.onDidOutputCue(event.nativeEvent);
+  };
+
+  _onDidSeekToTime = (event) => {
+    if (!this.props.onDidSeekToTime) {
+      return;
+    }
+    this.props.onDidSeekToTime(event.nativeEvent);
   };
 
   initialize() {
@@ -78,16 +111,28 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
       <NativeIvsPlayerView
         {...this.props}
         ref={RCT_IVS_VIDEO_REF}
+        onPlayerWillRebuffer={this._onPlayerWillRebuffer.bind(this)}
         onDidChangeState={this._onDidChangeState.bind(this)}
+        onDidChangeDuration={this._onDidChangeDuration.bind(this)}
+        onDidOutputCue={this._onDidOutputCue.bind(this)}
+        onDidSeekToTime={this._onDidSeekToTime.bind(this)}
       />
     );
   }
 }
 
 interface INativeIvsPlayer {
-  onDidChangeState?(any): any
+  onPlayerWillRebuffer?(any): any;
+  onDidChangeState?(any): any;
+  onDidChangeDuration?(any): any;
+  onDidOutputCue?(any): any;
+  onDidSeekToTime?(any): any;
+
+  maxBufferTimeSeconds: number;
 }
 
-const NativeIvsPlayerView: HostComponent<INativeIvsPlayer> = requireNativeComponent('AwsIvsPlayerView');
+const NativeIvsPlayerView: HostComponent<INativeIvsPlayer> = requireNativeComponent(
+  'AwsIvsPlayerView'
+);
 
 export default PlayerView;
