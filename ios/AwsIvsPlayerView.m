@@ -192,7 +192,7 @@ RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString)
 
         NSURL *videoUrl = [NSURL URLWithString:urlString];
         view.url = videoUrl;
-
+        view.isPaused = NO;
         [view.player load:videoUrl];
     }];
 }
