@@ -164,6 +164,7 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
     if (mPlayer != null) {
       this.mUri = Uri.parse(urlString);
 
+      mIsPaused = false;
       mPlayer.load(this.mUri);
     } else {
       Log.i(TAG, "Unable to play; not idle");
@@ -172,6 +173,7 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
 
   public void pause() {
     if (this.mPlayer != null) {
+      mIsPaused = true;
       mPlayer.pause();
     }
   }
@@ -237,7 +239,10 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
         mPlayer.play();
         break;
       case PLAYING:
+        Log.i(TAG, String.format("Buffered position is: %d", this.mPlayer.getBufferedPosition()));
+
         if (this.mPlayer.getBufferedPosition() / 1000 >= this.mMaxBufferTimeInSeconds) {
+          Log.i(TAG, String.format("Buffered position exceeds: %d", this.mMaxBufferTimeInSeconds));
           mPlayer.pause();
         }
         // playback started
