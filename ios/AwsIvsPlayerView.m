@@ -75,21 +75,32 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
 
 - (void)player:(IVSPlayer *)player didSeekToTime:(CMTime)time {
     NSLog(@"Seeked to time %@", @(CMTimeGetSeconds(time)));
-    self.onDidSeekToTime(@{@"time": @(CMTimeGetSeconds(time))});
+
+    if (self.onDidSeekToTime) {
+        self.onDidSeekToTime(@{@"time": @(CMTimeGetSeconds(time))});
+    }
 }
 
 - (void)playerWillRebuffer:(IVSPlayer *)player {
-    self.onPlayerWillRebuffer(@{});
+    if (self.onPlayerWillRebuffer) {
+        self.onPlayerWillRebuffer(@{});
+    }
 }
 
 - (void)player:(IVSPlayer *)player didChangeDuration:(CMTime)duration {
     NSLog(@"Changed duration to %@", @(CMTimeGetSeconds(duration)));
-    self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
+
+    if (self.onDidChangeDuration) {
+        self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
+    }
 }
 
 - (void)player:(IVSPlayer *)player didOutputCue:(__kindof IVSCue *)cue {
     NSLog(@"Did output Cue to %@", cue.type);
-    self.onDidOutputCue([cue toDictionary]);
+
+    if (self.onDidOutputCue) {
+        self.onDidOutputCue([cue toDictionary]);
+    }
 }
 
 - (void)player:(IVSPlayer *)player didChangeState:(IVSPlayerState)state {
@@ -161,6 +172,7 @@ RCT_EXPORT_MODULE()
     return [[IvsAdapterPlayerView alloc] init];
 }
 
+RCT_EXPORT_VIEW_PROPERTY(onPlayerWillRebuffer, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDidChangeState, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onDidChangeDuration, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDidOutputCue, RCTBubblingEventBlock);
