@@ -2,6 +2,7 @@ buildscript {
   // Buildscript is evaluated before everything else so we can't use getExtOrDefault
   def kotlin_version = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties['AwsIvsPlayerView_kotlinVersion']
   def ivs_version = rootProject.ext.has('IvsVersion') ? rootProject.ext.get('IvsVersion') : project.properties['AwsIvsPlayerView_IvsVersion']
+  def okhttp_version = rootProject.ext.has('okhttpVersion') ? rootProject.ext.get('okhttpVersion') : project.properties['AwsIvsPlayerView_okhttpVersion']
 
   repositories {
     google()
@@ -124,10 +125,12 @@ repositories {
 
 def kotlin_version = getExtOrDefault('kotlinVersion')
 def ivs_version = getExtOrDefault("IvsVersion")
+def okhttp_version = getExtOrDefault("okhttpVersion")
 
 dependencies {
   // noinspection GradleDynamicVersion
   api 'com.facebook.react:react-native:+'
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "com.amazonaws:ivs-player:$ivs_version"
+  implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
 }
