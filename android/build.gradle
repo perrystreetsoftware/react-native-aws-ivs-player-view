@@ -3,6 +3,7 @@ buildscript {
   def kotlin_version = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties['AwsIvsPlayerView_kotlinVersion']
   def ivs_version = rootProject.ext.has('IvsVersion') ? rootProject.ext.get('IvsVersion') : project.properties['AwsIvsPlayerView_IvsVersion']
   def okhttp_version = rootProject.ext.has('okhttpVersion') ? rootProject.ext.get('okhttpVersion') : project.properties['AwsIvsPlayerView_okhttpVersion']
+  def annotation_version = rootProject.ext.has('annotationVersion') ? rootProject.ext.get('annotationVersion') : project.properties['AwsIvsPlayerView_annotationVersion']
 
   repositories {
     google()
@@ -126,6 +127,7 @@ repositories {
 def kotlin_version = getExtOrDefault('kotlinVersion')
 def ivs_version = getExtOrDefault("IvsVersion")
 def okhttp_version = getExtOrDefault("okhttpVersion")
+def annotation_version = getExtOrDefault("annotationVersion")
 
 dependencies {
   // noinspection GradleDynamicVersion
@@ -133,4 +135,5 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "com.amazonaws:ivs-player:$ivs_version"
   implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
+  implementation "androidx.annotation:annotation:$annotation_version"
 }
