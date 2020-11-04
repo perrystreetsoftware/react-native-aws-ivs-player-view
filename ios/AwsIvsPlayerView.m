@@ -107,7 +107,7 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
     NSLog(@"Notify is %@", @(state));
     NSLog(@"Buffered is %@", @(CMTimeGetSeconds(player.buffered)));
     NSLog(@"LiveLowLatency is %@", @(player.liveLowLatency));
-    NSLog(@"Position is %@", @(CMTimeGetSeconds(player.liveLatency)));
+    NSLog(@"LiveLatency is %@", @(CMTimeGetSeconds(player.liveLatency)));
 
     if (self.onDidChangeState) {
         self.onDidChangeState(@{@"state": @(state)});

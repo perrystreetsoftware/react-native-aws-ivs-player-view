@@ -250,6 +250,10 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
     }
 
     Log.i(TAG, String.format("onDidChangeState: %s", state.toString()));
+    Log.i(TAG, String.format("Notify is %s", state));
+    Log.i(TAG, String.format("Buffered is %d", this.mPlayer.getBufferedPosition()));
+    Log.i(TAG, String.format("LiveLowLatency is %d", this.mPlayer.getLiveLatency()));
+    Log.i(TAG, String.format("Position is %d", this.mPlayer.getPosition()));
 
     notifyDidChangeState(state);
   }
