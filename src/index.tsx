@@ -98,6 +98,14 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
     );
   }
 
+  stop() {
+    UIManager.dispatchViewManagerCommand(
+      findNodeHandle(this),
+      UIManager.getViewManagerConfig('AwsIvsPlayerView').Commands.stop,
+      []
+    );
+  }
+
   load(urlString: String) {
     UIManager.dispatchViewManagerCommand(
       findNodeHandle(this),

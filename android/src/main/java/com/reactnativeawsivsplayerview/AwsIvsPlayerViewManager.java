@@ -72,6 +72,9 @@ public class AwsIvsPlayerViewManager extends SimpleViewManager<AwsIvsPlayerView>
           case COMMAND_UNMUTE:
                 videoView.unMute();
                 break;
+            case COMMAND_STOP:
+                videoView.stop();
+                break;
             default:
                 break;
         }

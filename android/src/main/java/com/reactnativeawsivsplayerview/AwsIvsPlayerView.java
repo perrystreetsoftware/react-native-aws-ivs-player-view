@@ -32,6 +32,7 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
   private boolean mIsPaused = false;
   private Uri mUri;
   private long mMaxBufferTimeInSeconds = 10;
+  private Player.Listener mPlayerListener;
 
   public void setMaxBufferTimeInSeconds(long bufferTimeInSeconds) {
     this.mMaxBufferTimeInSeconds = bufferTimeInSeconds;
@@ -41,7 +42,8 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
     COMMAND_LOAD("load"),
     COMMAND_PAUSE("pause"),
     COMMAND_MUTE("mute"),
-    COMMAND_UNMUTE("unmute");
+    COMMAND_UNMUTE("unmute"),
+    COMMAND_STOP("stop");
 
     private final String mName;
 
@@ -100,7 +102,8 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
 
     Player player = mPlayerView.getPlayer();
     mPlayer = player;
-    player.addListener(new Player.Listener() {
+
+    this.mPlayerListener = new Player.Listener() {
       @Override
       public void onCue(@NonNull Cue cue) {
         AwsIvsPlayerView.this.notifyDidOutputCue(cue);
@@ -141,7 +144,9 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
       public void onQualityChanged(@NonNull Quality quality) {
 
       }
-    });
+    };
+
+    player.addListener(this.mPlayerListener);
   }
 
   private void reload() {
@@ -176,6 +181,10 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
       mIsPaused = true;
       mPlayer.pause();
     }
+  }
+
+  public void stop() {
+    this.pause();
   }
 
   public void mute() {
@@ -216,6 +225,10 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
   }
 
   public void cleanupMediaPlayerResources() {
+    if (this.mPlayer != null) {
+      mPlayer.removeListener(mPlayerListener);
+      mPlayer.release();
+    }
   }
 
   public void release() {

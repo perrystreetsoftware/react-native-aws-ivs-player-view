@@ -242,6 +242,18 @@ RCT_EXPORT_METHOD(volume:(NSNumber * __nonnull)reactTag level:(NSNumber *)level)
     }];
 }
 
+RCT_EXPORT_METHOD(stop:(NSNumber * __nonnull)reactTag) {
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
+        IvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+        }
+
+        view.isPaused = YES;
+        [view.player pause];
+    }];
+}
+
 + (BOOL)requiresMainQueueSetup {
     return YES;
 }

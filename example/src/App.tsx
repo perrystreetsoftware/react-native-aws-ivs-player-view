@@ -64,6 +64,12 @@ export default function App() {
         }}
         title="Unmute"
       />
+      <Button
+        onPress={() => {
+          this.player.stop();
+        }}
+        title="Stop"
+      />
     </View>
   );
 }
