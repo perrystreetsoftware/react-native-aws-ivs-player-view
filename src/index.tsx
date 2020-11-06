@@ -22,6 +22,7 @@ interface IAwsIvsPlayerView {
   onDidChangeDuration?(any): any;
   onDidOutputCue?(any): any;
   onDidSeekToTime?(any): any;
+  onBitrateRecalculated?(any): any;
   maxBufferTimeSeconds: number;
   style?: ViewStyle;
 }
@@ -64,6 +65,13 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
       return;
     }
     this.props.onDidSeekToTime(event.nativeEvent);
+  };
+
+  _onBitrateRecalculated = (event) => {
+    if (!this.props.onBitrateRecalculated) {
+      return;
+    }
+    this.props.onBitrateRecalculated(event.nativeEvent);
   };
 
   initialize() {
@@ -124,6 +132,7 @@ class PlayerView extends Component<IAwsIvsPlayerView> {
         onDidChangeDuration={this._onDidChangeDuration.bind(this)}
         onDidOutputCue={this._onDidOutputCue.bind(this)}
         onDidSeekToTime={this._onDidSeekToTime.bind(this)}
+        onBitrateRecalculated={this._onBitrateRecalculated.bind(this)}
       />
     );
   }
@@ -135,6 +144,7 @@ interface INativeIvsPlayer {
   onDidChangeDuration?(any): any;
   onDidOutputCue?(any): any;
   onDidSeekToTime?(any): any;
+  onBitrateRecalculated?(any): any;
 
   maxBufferTimeSeconds: number;
 }

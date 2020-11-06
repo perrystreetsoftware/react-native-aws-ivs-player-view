@@ -33,6 +33,15 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
   private Uri mUri;
   private long mMaxBufferTimeInSeconds = 10;
   private Player.Listener mPlayerListener;
+  private AwsIvsBitrateCalculator mBitrateCalculator;
+
+  public long getAverageBitrate() {
+    if (mPlayer != null) {
+      return mPlayer.getAverageBitrate();
+    } else {
+      return 0;
+    }
+  }
 
   public void setMaxBufferTimeInSeconds(long bufferTimeInSeconds) {
     this.mMaxBufferTimeInSeconds = bufferTimeInSeconds;
@@ -62,7 +71,8 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
     EVENT_CHANGE_STATE("onDidChangeState"),
     EVENT_CHANGE_DURATION("onDidChangeDuration"),
     EVENT_OUTPUT_CUE("onDidOutputCue"),
-    EVENT_SEEK_TIME("onDidSeekToTime");
+    EVENT_SEEK_TIME("onDidSeekToTime"),
+    EVENT_BITRATE_RECALCULATED("onBitrateRecalculated");
 
     private final String mName;
 
@@ -102,6 +112,13 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
 
     Player player = mPlayerView.getPlayer();
     mPlayer = player;
+
+    this.mBitrateCalculator = new AwsIvsBitrateCalculator(mPlayer, new AwsIvsTransferListener() {
+      @Override
+      public void onBitrateRecalculated(long bitrate) {
+        AwsIvsPlayerView.this.notifyBitrateRecalculated(bitrate);
+      }
+    });
 
     this.mPlayerListener = new Player.Listener() {
       @Override
@@ -229,6 +246,9 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
       mPlayer.removeListener(mPlayerListener);
       mPlayer.release();
     }
+    if (this.mBitrateCalculator != null) {
+      this.mBitrateCalculator.dispose();
+    }
   }
 
   public void release() {
@@ -338,4 +358,15 @@ public class AwsIvsPlayerView extends FrameLayout implements LifecycleEventListe
 
     return event;
   }
+  private void notifyBitrateRecalculated(@NonNull long bitrate) {
+    WritableMap event = Arguments.createMap();
+    event.putString("bitrate", String.format(Locale.US, "%d", bitrate));
+
+    ReactContext reactContext = (ReactContext)getContext();
+    reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+            getId(),
+            Events.EVENT_BITRATE_RECALCULATED.toString(),
+            event);
+  }
+
 }

@@ -15,6 +15,8 @@ RCT_ENUM_CONVERTER(IVSPlayerState, (@{
 
 static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
 
+@class IvsAdapterPlayerView;
+
 @interface IVSCue (AwsIvsPlayerView)
 
 @end
@@ -40,13 +42,30 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
 
 @end
 
+@interface BitrateCalculator: NSObject {
+    CMTime lastCheckTime;
+    NSInteger calculatedBitrate;
+}
+
+// Avoid retain cycle with timers by using a separate object
+@property (nonatomic, weak) IvsAdapterPlayerView *playerViewAdapter;
+@property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic) double bitrate;
+
+- (instancetype)init:(IvsAdapterPlayerView *)playerView;
+- (void)cleanup;
+
+@end
+
 @interface IvsAdapterPlayerView : UIView <IVSPlayerDelegate>
 @property (nonatomic, strong) IVSPlayerView *playerView;
+@property (nonatomic, strong) BitrateCalculator *bitrateCalculator;
 @property (nonatomic, copy) RCTBubblingEventBlock onPlayerWillRebuffer;
 @property (nonatomic, copy) RCTBubblingEventBlock onDidChangeState;
 @property (nonatomic, copy) RCTBubblingEventBlock onDidChangeDuration;
 @property (nonatomic, copy) RCTBubblingEventBlock onDidOutputCue;
 @property (nonatomic, copy) RCTBubblingEventBlock onDidSeekToTime;
+@property (nonatomic, copy) RCTBubblingEventBlock onBitrateRecalculated;
 @property (nonatomic, strong) NSURL *url;
 @property (nonatomic) NSInteger maxBufferTimeSeconds;
 @property (nonatomic) BOOL isPaused;
@@ -66,9 +85,24 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
         self.playerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
         self.maxBufferTimeSeconds = kDefaultMaxBufferTimeInSeconds;
+        self.bitrateCalculator = [[BitrateCalculator alloc] init:self];
     }
 
     return self;
+}
+
+- (void)dealloc{
+    [self cleanup];
+}
+
+- (void)cleanup {
+    [self.bitrateCalculator cleanup];
+}
+
+- (void)handleBitrateRecalculated:(double)bitrate {
+    if (self.onBitrateRecalculated) {
+        self.onBitrateRecalculated(@{@"bitrate": @(self.bitrateCalculator.bitrate)});
+    }
 }
 
 // MARK: - IVSPlayerDelegate
@@ -248,7 +282,6 @@ RCT_EXPORT_METHOD(stop:(NSNumber * __nonnull)reactTag) {
         if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
             RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
         }
-
         view.isPaused = YES;
         [view.player pause];
     }];
@@ -266,4 +299,49 @@ RCT_EXPORT_METHOD(stop:(NSNumber * __nonnull)reactTag) {
               @"IVSPlayerStateEnded":@(IVSPlayerStateEnded)
               };
 }
+@end
+
+@implementation BitrateCalculator
+
+- (instancetype)init:(IvsAdapterPlayerView *)playerView {
+    if (self = [super init]) {
+        self.playerViewAdapter = playerView;
+
+        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
+                                                      target:self
+                                                    selector:@selector(onTimer:)
+                                                    userInfo:nil
+                                                     repeats:YES];
+    }
+
+    return self;
+}
+
+- (void)onTimer:(id)sender {
+    if (self.playerViewAdapter) {
+        CMTime currentTime = self.playerViewAdapter.playerView.player.position;
+
+        if (0 == CMTimeGetSeconds(lastCheckTime)) {
+            lastCheckTime = currentTime;
+
+            return;
+        }
+
+        lastCheckTime = currentTime;
+        NSInteger calculatedBitrate = self.playerViewAdapter.playerView.player.videoBitrate;
+        self.bitrate = calculatedBitrate;
+
+        [self.playerViewAdapter handleBitrateRecalculated:self.bitrate];
+
+        NSLog(@"Bitrate recalculated %@", @(self.bitrate));
+    }
+}
+
+- (void)cleanup {
+    if (self.timer) {
+        [self.timer invalidate];
+        self.timer = nil;
+    }
+}
+
 @end

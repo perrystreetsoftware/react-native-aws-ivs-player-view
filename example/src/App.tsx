@@ -37,6 +37,9 @@ export default function App() {
         onDidChangeState={(data) => {
           console.log('Did change state: ' + JSON.stringify(data));
         }}
+        onBitrateRecalculated={(data) => {
+          console.log('Did recalculated bitrate: ' + JSON.stringify(data));
+        }}
       />
       <Button
         onPress={() => {
