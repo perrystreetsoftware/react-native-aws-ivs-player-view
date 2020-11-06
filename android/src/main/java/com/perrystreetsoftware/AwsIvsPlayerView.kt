@@ -1,4 +1,4 @@
-package com.perrystreet
+package com.perrystreetsoftware
 
 import android.content.Context
 import android.net.Uri

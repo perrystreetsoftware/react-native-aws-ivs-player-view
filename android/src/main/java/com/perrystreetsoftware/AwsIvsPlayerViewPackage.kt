@@ -1,4 +1,4 @@
-package com.perrystreet
+package com.perrystreetsoftware
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
