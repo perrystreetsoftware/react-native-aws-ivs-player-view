@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StyleSheet, Button, View } from 'react-native';
+import { StyleSheet, Button, View, Text } from 'react-native';
 import PlayerView from 'react-native-aws-ivs-player-view';
 
 const styles = StyleSheet.create({
@@ -26,8 +26,13 @@ const styles = StyleSheet.create({
 });
 
 export default function App() {
+  const [bitrate, setBitrate] = React.useState(0);
+  const [playbackState, setPlaybackState] = React.useState(0);
+
   return (
     <View style={styles.container}>
+      <Text>Bitrate: {bitrate}</Text>
+      <Text>Playback state: {playbackState}</Text>
       <PlayerView
         style={styles.player}
         maxBufferTimeSeconds={15}
@@ -36,9 +41,11 @@ export default function App() {
         }}
         onDidChangeState={(data) => {
           console.log('Did change state: ' + JSON.stringify(data));
+          setPlaybackState(data.state);
         }}
         onBitrateRecalculated={(data) => {
           console.log('Did recalculated bitrate: ' + JSON.stringify(data));
+          setBitrate(data.bitrate);
         }}
       />
       <Button

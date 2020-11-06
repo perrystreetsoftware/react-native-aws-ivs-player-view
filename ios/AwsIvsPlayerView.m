@@ -1,6 +1,8 @@
 #import "AwsIvsPlayerView.h"
 #import <React/RCTUIManager.h>
 #import <AmazonIVSPlayer/AmazonIVSPlayer.h>
+#import "AwsIvsBitrateCalculator.h"
+#import "AwsIvsAdapterPlayerView.h"
 
 @implementation RCTConvert (IVSPlayerState)
 
@@ -11,183 +13,6 @@ RCT_ENUM_CONVERTER(IVSPlayerState, (@{
     @"IVSPlayerStatePlaying": @(IVSPlayerStatePlaying),
     @"IVSPlayerStateEnded": @(IVSPlayerStateEnded)
                                     }), IVSPlayerStateIdle, integerValue);
-@end
-
-static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
-
-@class IvsAdapterPlayerView;
-
-@interface IVSCue (AwsIvsPlayerView)
-
-@end
-
-@implementation IVSCue (AwsIvsPlayerView)
-
-- (NSDictionary *)toDictionary {
-    if ([self isKindOfClass:[IVSTextMetadataCue class]]) {
-        IVSTextMetadataCue *textMetadataCue = (IVSTextMetadataCue *)self;
-
-        return @{@"text": textMetadataCue.text,
-                 @"description": textMetadataCue.textDescription};
-    } else if ([self isKindOfClass:[IVSTextCue class]]) {
-        IVSTextCue *textCue = (IVSTextCue *)self;
-
-        return @{@"text": textCue.text};
-    } else {
-        return @{@"type": self.type,
-                 @"start_time": @(CMTimeGetSeconds(self.startTime)),
-                 @"end_time": @(CMTimeGetSeconds(self.endTime))};
-    }
-}
-
-@end
-
-@interface BitrateCalculator: NSObject {
-    CMTime lastCheckTime;
-    NSInteger calculatedBitrate;
-}
-
-// Avoid retain cycle with timers by using a separate object
-@property (nonatomic, weak) IvsAdapterPlayerView *playerViewAdapter;
-@property (nonatomic, strong) NSTimer *timer;
-@property (nonatomic) double bitrate;
-
-- (instancetype)init:(IvsAdapterPlayerView *)playerView;
-- (void)cleanup;
-
-@end
-
-@interface IvsAdapterPlayerView : UIView <IVSPlayerDelegate>
-@property (nonatomic, strong) IVSPlayerView *playerView;
-@property (nonatomic, strong) BitrateCalculator *bitrateCalculator;
-@property (nonatomic, copy) RCTBubblingEventBlock onPlayerWillRebuffer;
-@property (nonatomic, copy) RCTBubblingEventBlock onDidChangeState;
-@property (nonatomic, copy) RCTBubblingEventBlock onDidChangeDuration;
-@property (nonatomic, copy) RCTBubblingEventBlock onDidOutputCue;
-@property (nonatomic, copy) RCTBubblingEventBlock onDidSeekToTime;
-@property (nonatomic, copy) RCTBubblingEventBlock onBitrateRecalculated;
-@property (nonatomic, strong) NSURL *url;
-@property (nonatomic) NSInteger maxBufferTimeSeconds;
-@property (nonatomic) BOOL isPaused;
-
-@end
-
-@implementation IvsAdapterPlayerView
-
-- (IVSPlayer *)player {
-    return _playerView.player;
-}
-
-- (instancetype)init {
-    if (self = [super init]) {
-        self.playerView = [[IVSPlayerView alloc] init];
-        [self addSubview:self.playerView];
-        self.playerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-        self.maxBufferTimeSeconds = kDefaultMaxBufferTimeInSeconds;
-        self.bitrateCalculator = [[BitrateCalculator alloc] init:self];
-    }
-
-    return self;
-}
-
-- (void)dealloc{
-    [self cleanup];
-}
-
-- (void)cleanup {
-    [self.bitrateCalculator cleanup];
-}
-
-- (void)handleBitrateRecalculated:(double)bitrate {
-    if (self.onBitrateRecalculated) {
-        self.onBitrateRecalculated(@{@"bitrate": @(self.bitrateCalculator.bitrate)});
-    }
-}
-
-// MARK: - IVSPlayerDelegate
-
-- (void)player:(IVSPlayer *)player didSeekToTime:(CMTime)time {
-    NSLog(@"Seeked to time %@", @(CMTimeGetSeconds(time)));
-
-    if (self.onDidSeekToTime) {
-        self.onDidSeekToTime(@{@"time": @(CMTimeGetSeconds(time))});
-    }
-}
-
-- (void)playerWillRebuffer:(IVSPlayer *)player {
-    if (self.onPlayerWillRebuffer) {
-        self.onPlayerWillRebuffer(@{});
-    }
-}
-
-- (void)player:(IVSPlayer *)player didChangeDuration:(CMTime)duration {
-    NSLog(@"Changed duration to %@", @(CMTimeGetSeconds(duration)));
-
-    if (self.onDidChangeDuration) {
-        self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
-    }
-}
-
-- (void)player:(IVSPlayer *)player didOutputCue:(__kindof IVSCue *)cue {
-    NSLog(@"Did output Cue to %@", cue.type);
-
-    if (self.onDidOutputCue) {
-        self.onDidOutputCue([cue toDictionary]);
-    }
-}
-
-- (void)player:(IVSPlayer *)player didChangeState:(IVSPlayerState)state {
-    NSLog(@"Notify is %@", @(state));
-    NSLog(@"Buffered is %@", @(CMTimeGetSeconds(player.buffered)));
-    NSLog(@"LiveLowLatency is %@", @(player.liveLowLatency));
-    NSLog(@"LiveLatency is %@", @(CMTimeGetSeconds(player.liveLatency)));
-
-    if (self.onDidChangeState) {
-        self.onDidChangeState(@{@"state": @(state)});
-    }
-
-    switch(state) {
-        case IVSPlayerStateIdle:
-            NSLog(@"State: Idle");
-
-            if (!self.isPaused) {
-                NSLog(@"State: not paused -- reloading");
-
-                [self reload];
-            } else {
-                NSLog(@"State: we are paused -- not reloading %@", @(self.isPaused));
-            }
-            break;
-        case IVSPlayerStateBuffering:
-            NSLog(@"State: Buffering");
-            break;
-        case IVSPlayerStateEnded:
-            NSLog(@"State: Ended");
-            break;
-        case IVSPlayerStateReady:
-            NSLog(@"State: Ready");
-            [player play];
-            break;
-        case IVSPlayerStatePlaying:
-            NSLog(@"State: Playing");
-            // If we have accumulated too much of a buffer,
-            // then we need to move ourselves back into the
-            // IVSPlayerStateIdle state, which will then trigger
-            // a reload
-            if (@(CMTimeGetSeconds(player.buffered)).integerValue >= self.maxBufferTimeSeconds) {
-                [player pause];
-            }
-            break;
-    }
-}
-
-- (void)reload {
-    if (self.url) {
-        [[self player] load:self.url];
-    }
-}
-
 @end
 
 @interface AwsIvsPlayerView()
@@ -203,7 +28,7 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
 RCT_EXPORT_MODULE()
 
 - (UIView *)view {
-    return [[IvsAdapterPlayerView alloc] init];
+    return [[AwsIvsAdapterPlayerView alloc] init];
 }
 
 RCT_EXPORT_VIEW_PROPERTY(onPlayerWillRebuffer, RCTBubblingEventBlock);
@@ -211,13 +36,14 @@ RCT_EXPORT_VIEW_PROPERTY(onDidChangeState, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onDidChangeDuration, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDidOutputCue, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDidSeekToTime, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onBitrateRecalculated, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(maxBufferTimeSeconds, NSInteger)
 
 RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
 
         IVSPlayer *player = [[IVSPlayer alloc] init];
@@ -232,10 +58,10 @@ RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString)
 }
 
 RCT_EXPORT_METHOD(pause:(NSNumber * __nonnull)reactTag) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
 
         view.isPaused = YES;
@@ -244,10 +70,10 @@ RCT_EXPORT_METHOD(pause:(NSNumber * __nonnull)reactTag) {
 }
 
 RCT_EXPORT_METHOD(mute:(NSNumber * __nonnull)reactTag) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
         // Call your native component's method here
         [view.player setMuted:YES];
@@ -255,10 +81,10 @@ RCT_EXPORT_METHOD(mute:(NSNumber * __nonnull)reactTag) {
 }
 
 RCT_EXPORT_METHOD(unmute:(NSNumber * __nonnull)reactTag) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
         // Call your native component's method here
         [view.player setMuted:NO];
@@ -266,10 +92,10 @@ RCT_EXPORT_METHOD(unmute:(NSNumber * __nonnull)reactTag) {
 }
 
 RCT_EXPORT_METHOD(volume:(NSNumber * __nonnull)reactTag level:(NSNumber *)level) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
 
         [view.player setVolume:level.floatValue];
@@ -277,10 +103,10 @@ RCT_EXPORT_METHOD(volume:(NSNumber * __nonnull)reactTag level:(NSNumber *)level)
 }
 
 RCT_EXPORT_METHOD(stop:(NSNumber * __nonnull)reactTag) {
-    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, IvsAdapterPlayerView *> *viewRegistry) {
-        IvsAdapterPlayerView *view = viewRegistry[reactTag];
-        if (![view isKindOfClass:[IvsAdapterPlayerView class]]) {
-            RCTLogError(@"Invalid view returned from registry, expecting IvsAdapterPlayerView, got: %@", view);
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {
+        AwsIvsAdapterPlayerView *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[AwsIvsAdapterPlayerView class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting AwsIvsAdapterPlayerView, got: %@", view);
         }
         view.isPaused = YES;
         [view.player pause];
@@ -299,49 +125,4 @@ RCT_EXPORT_METHOD(stop:(NSNumber * __nonnull)reactTag) {
               @"IVSPlayerStateEnded":@(IVSPlayerStateEnded)
               };
 }
-@end
-
-@implementation BitrateCalculator
-
-- (instancetype)init:(IvsAdapterPlayerView *)playerView {
-    if (self = [super init]) {
-        self.playerViewAdapter = playerView;
-
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
-                                                      target:self
-                                                    selector:@selector(onTimer:)
-                                                    userInfo:nil
-                                                     repeats:YES];
-    }
-
-    return self;
-}
-
-- (void)onTimer:(id)sender {
-    if (self.playerViewAdapter) {
-        CMTime currentTime = self.playerViewAdapter.playerView.player.position;
-
-        if (0 == CMTimeGetSeconds(lastCheckTime)) {
-            lastCheckTime = currentTime;
-
-            return;
-        }
-
-        lastCheckTime = currentTime;
-        NSInteger calculatedBitrate = self.playerViewAdapter.playerView.player.videoBitrate;
-        self.bitrate = calculatedBitrate;
-
-        [self.playerViewAdapter handleBitrateRecalculated:self.bitrate];
-
-        NSLog(@"Bitrate recalculated %@", @(self.bitrate));
-    }
-}
-
-- (void)cleanup {
-    if (self.timer) {
-        [self.timer invalidate];
-        self.timer = nil;
-    }
-}
-
 @end
