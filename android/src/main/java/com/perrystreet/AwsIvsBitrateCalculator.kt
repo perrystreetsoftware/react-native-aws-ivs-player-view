@@ -1,4 +1,4 @@
-package com.reactnativeawsivsplayerview
+package com.perrystreet
 
 import android.os.Handler
 import android.os.Message
@@ -56,7 +56,11 @@ class AwsIvsBitrateCalculator(player: Player, listener: AwsIvsTransferListener) 
     }
 
     fun measureBitrate() {
-        mListener.onBitrateRecalculated(mPlayer.get()?.averageBitrate ?: 0)
+        mPlayer.get()?.let { player ->
+            val bitrate = if (player.state == Player.State.PLAYING) player.averageBitrate else 0
+
+            mListener.onBitrateRecalculated(bitrate)
+        }
 
         if (!this.mDisposed) {
             mHandler.sendMessageDelayed(Message.obtain(mHandler, MSG_CHECK_BITRATE), RECALC_RATE_IN_MS.toLong())

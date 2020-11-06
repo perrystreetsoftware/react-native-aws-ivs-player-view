@@ -11,7 +11,7 @@ import com.facebook.soloader.SoLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import com.reactnativeawsivsplayerview.AwsIvsPlayerViewPackage;
+import com.perrystreet.AwsIvsPlayerViewPackage;
 
 public class MainApplication extends Application implements ReactApplication {
 
