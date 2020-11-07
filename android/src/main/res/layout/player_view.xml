@@ -6,7 +6,7 @@
   android:layout_height="wrap_content">
   <com.amazonaws.ivs.player.PlayerView
     android:id="@+id/player_view"
-    android:background="#ff0000"
+    android:background="@android:color/transparent"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
   </com.amazonaws.ivs.player.PlayerView>
