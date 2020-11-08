@@ -43,7 +43,11 @@ class AwsIvsPlayerViewManager : SimpleViewManager<AwsIvsPlayerView>() {
     override fun receiveCommand(videoView: AwsIvsPlayerView, commandId: Int, args: ReadableArray?) {
         val command = AwsIvsPlayerView.Commands.values()[commandId]
         when (command) {
-            AwsIvsPlayerView.Commands.COMMAND_LOAD -> videoView.load(args!!.getString(0))
+            AwsIvsPlayerView.Commands.COMMAND_LOAD -> {
+                args?.getString(0)?.let { urlString ->
+                    videoView.load(urlString)
+                }
+            }
             AwsIvsPlayerView.Commands.COMMAND_PAUSE -> videoView.pause()
             AwsIvsPlayerView.Commands.COMMAND_MUTE -> videoView.mute()
             AwsIvsPlayerView.Commands.COMMAND_UNMUTE -> videoView.unMute()

@@ -68,7 +68,7 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
         val player = playerView.getPlayer()
         mPlayer = player
 
-        mBitrateCalculator = AwsIvsBitrateCalculator(mPlayer!!, object : AwsIvsTransferListener {
+        mBitrateCalculator = AwsIvsBitrateCalculator(player, object : AwsIvsTransferListener {
             override fun onBitrateRecalculated(bitrate: Long) {
                 notifyBitrateRecalculated(bitrate)
             }
@@ -107,8 +107,8 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
     }
 
     private fun reload() {
-        if (mUri != null) {
-            mPlayer!!.load(mUri!!)
+        mUri?.let {
+            mPlayer?.load(it)
         }
     }
 
@@ -119,22 +119,20 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
         layout(left, top, right, bottom)
     }
 
-    fun load(urlString: String?) {
-        if (mPlayer != null) {
+    fun load(urlString: String) {
+        mPlayer?.let { player ->
             val uri = Uri.parse(urlString)
             mIsPaused = false
-            mPlayer!!.load(uri)
+            player.load(uri)
             this.mUri = uri
-        } else {
+        } ?: run {
             Log.i(TAG, "Unable to play; not idle")
         }
     }
 
     fun pause() {
-        if (mPlayer != null) {
-            mIsPaused = true
-            mPlayer!!.pause()
-        }
+        mIsPaused = true
+        mPlayer?.pause()
     }
 
     fun stop() {
@@ -142,15 +140,11 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
     }
 
     fun mute() {
-        if (mPlayer != null) {
-            mPlayer!!.isMuted = true
-        }
+        mPlayer?.isMuted = true
     }
 
     fun unMute() {
-        if (mPlayer != null) {
-            mPlayer!!.isMuted = false
-        }
+        mPlayer?.isMuted = false
     }
 
     override fun onHostResume() {
@@ -176,20 +170,16 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
     }
 
     fun cleanupMediaPlayerResources() {
-        if (mPlayer != null) {
-            mPlayer!!.removeListener(mPlayerListener!!)
-            mPlayer!!.release()
+        mPlayerListener?.let { listener ->
+           mPlayer?.removeListener(listener)
         }
-        if (mBitrateCalculator != null) {
-            mBitrateCalculator!!.dispose()
-        }
+        mPlayer?.release()
+        mBitrateCalculator?.dispose()
     }
 
     fun release() {
-        if (null != mPlayer) {
-            mPlayer!!.release()
-            mPlayer = null
-        }
+        mPlayer?.release()
+        mPlayer = null
     }
 
     fun onDidChangeState(state: Player.State) {
@@ -199,20 +189,22 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
             }
             Player.State.BUFFERING -> {
             }
-            Player.State.READY -> mPlayer!!.play()
+            Player.State.READY -> mPlayer?.play()
             Player.State.PLAYING -> {
-                Log.i(TAG, String.format("Buffered position is: %d", mPlayer!!.bufferedPosition))
-                if (mPlayer!!.bufferedPosition / 1000 >= mMaxBufferTimeInSeconds) {
-                    Log.i(TAG, String.format("Buffered position exceeds: %d", mMaxBufferTimeInSeconds))
-                    mPlayer!!.pause()
+                mPlayer?.let { player ->
+                    Log.i(TAG, String.format("Buffered position is: %d", player.bufferedPosition))
+                    if (player.bufferedPosition / 1000 >= mMaxBufferTimeInSeconds) {
+                        Log.i(TAG, String.format("Buffered position exceeds: %d", mMaxBufferTimeInSeconds))
+                        player.pause()
+                    }
                 }
             }
         }
         Log.i(TAG, String.format("onDidChangeState: %s", state.toString()))
         Log.i(TAG, String.format("Notify is %s", state))
-        Log.i(TAG, String.format("Buffered is %d", mPlayer!!.bufferedPosition))
-        Log.i(TAG, String.format("LiveLowLatency is %d", mPlayer!!.liveLatency))
-        Log.i(TAG, String.format("Position is %d", mPlayer!!.position))
+        Log.i(TAG, String.format("Buffered is %d", mPlayer?.bufferedPosition))
+        Log.i(TAG, String.format("LiveLowLatency is %d", mPlayer?.liveLatency))
+        Log.i(TAG, String.format("Position is %d", mPlayer?.position))
         notifyDidChangeState(state)
     }
 
