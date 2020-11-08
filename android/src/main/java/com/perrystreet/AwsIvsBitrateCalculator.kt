@@ -1,4 +1,4 @@
-package com.perrystreetsoftware
+package com.perrystreet
 
 import android.os.Handler
 import android.os.Message
