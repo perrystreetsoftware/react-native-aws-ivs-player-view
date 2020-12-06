@@ -54,6 +54,11 @@ RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString)
         view.url = videoUrl;
         view.isPaused = NO;
         [view.player load:videoUrl];
+
+        // https://stackoverflow.com/a/45430673
+        AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+        [audioSession setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [audioSession setActive:YES error:nil];
     }];
 }
 
