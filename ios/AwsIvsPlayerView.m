@@ -38,6 +38,7 @@ RCT_EXPORT_VIEW_PROPERTY(onDidOutputCue, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onDidSeekToTime, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onBitrateRecalculated, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(maxBufferTimeSeconds, NSInteger)
+RCT_EXPORT_VIEW_PROPERTY(rebufferToLive, BOOL)
 
 RCT_EXPORT_METHOD(load:(NSNumber * __nonnull)reactTag url:(NSString *)urlString) {
     [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, AwsIvsAdapterPlayerView *> *viewRegistry) {

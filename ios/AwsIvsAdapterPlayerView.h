@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSURL *url;
 @property (nonatomic) NSInteger maxBufferTimeSeconds;
 @property (nonatomic) BOOL isPaused;
+@property (nonatomic) BOOL rebufferToLive;
 
 @property (nonatomic, readonly) IVSPlayer *player;
 

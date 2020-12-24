@@ -68,6 +68,11 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
     }
 }
 
+- (void)setRebufferToLive:(BOOL)rebufferToLive {
+    [self.playerView.player performSelector:@selector(setRebufferToLive:)
+                                 withObject:@(rebufferToLive)];
+}
+
 // MARK: - IVSPlayerDelegate
 
 - (void)player:(IVSPlayer *)player didSeekToTime:(CMTime)time {

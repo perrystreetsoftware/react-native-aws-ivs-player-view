@@ -62,8 +62,14 @@ class AwsIvsPlayerViewManager : SimpleViewManager<AwsIvsPlayerView>() {
         videoView.setMaxBufferTimeInSeconds(bufferTimeInSeconds.toLong())
     }
 
+    @ReactProp(name = PROP_REBUFFER_TO_LIVE)
+    fun setRebufferToLive(videoView: AwsIvsPlayerView, rebufferToLive: Boolean) {
+        videoView.setRebufferToLive(rebufferToLive)
+    }
+
     companion object {
         const val REACT_CLASS = "AwsIvsPlayerView"
         const val PROP_MAX_BUFFER_TIME_SECONDS = "maxBufferTimeSeconds"
+        const val PROP_REBUFFER_TO_LIVE = "rebufferToLive"
     }
 }

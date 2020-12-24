@@ -24,6 +24,7 @@ interface IAwsIvsPlayerView {
   onDidSeekToTime?(any): any;
   onBitrateRecalculated?(any): any;
   maxBufferTimeSeconds: number;
+  rebufferToLive: boolean;
   style?: ViewStyle;
 }
 
@@ -147,6 +148,7 @@ interface INativeIvsPlayer {
   onBitrateRecalculated?(any): any;
 
   maxBufferTimeSeconds: number;
+  rebufferToLive: boolean;
 }
 
 const NativeIvsPlayerView: HostComponent<INativeIvsPlayer> = requireNativeComponent(

@@ -18,5 +18,5 @@ Pod::Spec.new do |s|
   
 
   s.dependency "React"
-  s.dependency 'AmazonIVSPlayer'
+  s.dependency 'AmazonIVSPlayer', ">= 1.2.0"
 end

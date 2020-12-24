@@ -27,6 +27,10 @@ class AwsIvsPlayerView : FrameLayout, LifecycleEventListener {
         mMaxBufferTimeInSeconds = bufferTimeInSeconds
     }
 
+    fun setRebufferToLive(rebufferToLive: Boolean) {
+        (mPlayer as? MediaPlayer)?.setRebufferToLive(rebufferToLive)
+    }
+
     enum class Commands(private val mName: String) {
         COMMAND_LOAD("load"), COMMAND_PAUSE("pause"), COMMAND_MUTE("mute"), COMMAND_UNMUTE("unmute"), COMMAND_STOP("stop");
 

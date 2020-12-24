@@ -36,6 +36,7 @@ export default function App() {
       <PlayerView
         style={styles.player}
         maxBufferTimeSeconds={15}
+        rebufferToLive={true}
         ref={(e: any) => {
           this.player = e;
         }}
