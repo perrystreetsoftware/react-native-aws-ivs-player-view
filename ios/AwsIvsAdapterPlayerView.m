@@ -90,10 +90,12 @@ static const NSInteger kDefaultMaxBufferTimeInSeconds = 10;
 }
 
 - (void)player:(IVSPlayer *)player didChangeDuration:(CMTime)duration {
-    NSLog(@"Changed duration to %@", @(CMTimeGetSeconds(duration)));
+    if (!isnan(CMTimeGetSeconds(duration))) {
+        NSLog(@"Changed duration to %@", @(CMTimeGetSeconds(duration)));
 
-    if (self.onDidChangeDuration) {
-        self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
+        if (self.onDidChangeDuration) {
+            self.onDidChangeDuration(@{@"duration": @(CMTimeGetSeconds(duration))});
+        }
     }
 }
 
