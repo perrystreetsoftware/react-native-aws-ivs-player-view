@@ -56,6 +56,11 @@ yarn example android
 yarn example ios
 ```
 
+## Requirements
+
+iOS minimum: 12.0
+Android minimum: 21 ([per AWS](https://github.com/aws-samples/amazon-ivs-player-android-sample/blob/master/basicplayback/build.gradle))
+
 ## Contributing
 
 Please open PRs or issues and we will merge accordingly.
