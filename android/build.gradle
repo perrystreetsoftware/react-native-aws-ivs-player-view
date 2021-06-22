@@ -80,7 +80,7 @@ repositories {
     logger.info(":${project.name}:reactNativeAndroidRoot ${defaultDir.canonicalPath}")
     found = true
   } else {
-    def parentDir = rootProject.projectDir
+    File parentDir = rootProject.projectDir
 
     1.upto(5, {
       if (found) return true
