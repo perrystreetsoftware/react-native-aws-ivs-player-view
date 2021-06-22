@@ -71,6 +71,9 @@ repositories {
     )
   }
 
+  logger.info("projectDir = $projectDir")
+  logger.info("defaultDir = $defaultDir")
+
   if (defaultDir.exists()) {
     maven {
       url defaultDir.toString()
